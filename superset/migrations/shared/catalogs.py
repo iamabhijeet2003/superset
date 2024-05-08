@@ -21,8 +21,8 @@ import logging
 
 from alembic import op
 
-from superset import db, security_manager
 from superset.daos.database import DatabaseDAO
+from superset.extensions import db, security_manager
 from superset.models.core import Database
 
 logger = logging.getLogger(__name__)

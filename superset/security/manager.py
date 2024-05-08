@@ -2672,7 +2672,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         """
 
         # pylint: disable=import-outside-toplevel
-        from superset import db
+        from superset.extensions import db
 
         if self.is_admin():
             return
