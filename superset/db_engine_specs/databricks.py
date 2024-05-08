@@ -39,7 +39,6 @@ if TYPE_CHECKING:
     from superset.models.core import Database
 
 
-#
 class DatabricksParametersSchema(Schema):
     """
     This is the list of fields that are expected
@@ -159,6 +158,8 @@ class DatabricksNativeEngineSpec(BasicParametersMixin, DatabricksODBCEngineSpec)
         "databricks+connector://token:{access_token}@{host}:{port}/{database_name}"
     )
     encryption_parameters = {"ssl": "1"}
+
+    supports_dynamic_schema = supports_catalog = supports_dynamic_catalog = True
 
     @staticmethod
     def get_extra_params(database: Database) -> dict[str, Any]:
@@ -367,3 +368,32 @@ class DatabricksNativeEngineSpec(BasicParametersMixin, DatabricksODBCEngineSpec)
         )
         spec.components.schema(cls.__name__, schema=cls.properties_schema)
         return spec.to_dict()["components"]["schemas"][cls.__name__]
+
+    @classmethod
+    def get_default_catalog(
+        cls,
+        database: Database,
+    ) -> str | None:
+        with database.get_inspector() as inspector:
+            return inspector.bind.execute("SELECT current_catalog()").scalar()
+
+    @classmethod
+    def get_prequeries(
+        cls,
+        catalog: str | None = None,
+        schema: str | None = None,
+    ) -> list[str]:
+        prequeries = []
+        if catalog:
+            prequeries.append(f"USE CATALOG {catalog}")
+        if schema:
+            prequeries.append(f"USE SCHEMA {schema}")
+        return prequeries
+
+    @classmethod
+    def get_catalog_names(
+        cls,
+        database: Database,
+        inspector: Inspector,
+    ) -> set[str]:
+        return {catalog for (catalog,) in inspector.bind.execute("SHOW CATALOGS")}
